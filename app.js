@@ -1,3 +1,67 @@
+// Fermeture propre de la ChatBox que tu as commencée
+      <div style={{ maxHeight:220, overflowY:"auto", padding:"10px 12px", display:"flex", flexDirection:"column", gap:8 }}>
+        {msgs.map(m => (
+          <div key={m.id} style={{ alignSelf: m.senderId === me.id ? 'flex-end' : 'flex-start', background: m.senderId === me.id ? '#4F46E5' : '#eee', color: m.senderId === me.id ? '#fff' : '#000', padding: '6px 10px', borderRadius: 10, fontSize: 12 }}>
+            {m.text}
+          </div>
+        ))}
+        <div ref={bottomRef} />
+      </div>
+      <div style={{ display:"flex", gap:5, padding:8 }}>
+        <input style={S.inp} value={txt} onChange={e=>setTxt(e.target.value)} placeholder="Message..." />
+        <button style={btn("p")} onClick={send}>OK</button>
+      </div>
+    </div>}
+  </div>;
+}
+
+// N'oublie pas de fermer les éventuelles fonctions de Tab restantes ici...
+// Remplace tes identifiants après avoir créé ton projet sur supabase.com
+const supabase = window.supabase?.createClient('TON_URL_SUPABASE', 'TA_CLE_ANON');
+
+// Nouvelle version des fonctions de stockage
+async function sGet(key) {
+  if (!supabase) return JSON.parse(localStorage.getItem(key)); // Fallback local
+  const { data } = await supabase.from(key).select('*');
+  return data;
+}
+
+async function sSet(key, val) {
+  if (!supabase) return localStorage.setItem(key, JSON.stringify(val));
+  await supabase.from(key).upsert(val);
+}
+// Nouveau composant de Carte
+function CovoitMap({ users, me }) {
+  const mapRef = useRef(null);
+  const instance = useRef(null);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+    
+    // Initialisation
+    if (!instance.current) {
+      instance.current = L.map(mapRef.current).setView([50.6703, 3.2283], 11);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(instance.current);
+    }
+
+    // Nettoyage et ajout des points
+    instance.current.eachLayer(l => { if(l instanceof L.Marker) instance.current.removeLayer(l); });
+
+    // Bureau
+    L.marker([50.6703, 3.2283]).addTo(instance.current).bindPopup("🏢 Bureau (Lys-lez-Lannoy)");
+
+    // Collègues
+    users.forEach(u => {
+      if (u.cD) {
+        const color = u.role === 'conducteur' ? 'blue' : 'green';
+        L.circleMarker([u.cD.lat, u.cD.lon], { color, radius: 8 }).addTo(instance.current)
+          .bindPopup(`<b>${u.prenom}</b> (${u.role})<br>${u.ville}`);
+      }
+    });
+  }, [users]);
+
+  return <div ref={mapRef} style={{ height: "300px", borderRadius: "12px", marginBottom: "20px", border: "1px solid #ddd" }} />;
+}
 import React, { useState, useEffect, useRef } from "react";
 // On importe Leaflet pour la carte (à ajouter dans ton index.html ou via CDN)
 // <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
