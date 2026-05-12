@@ -8,14 +8,14 @@ const PRIME = 2.5;
 const JOURS_SEM = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi"];
 const TRAV_COORD = { lat: 50.6703, lon: 3.2283 };
 
-// Tables Supabase (ou LocalStorage keys)
+// Tables de stockage
 const K_USERS = "covoit_users";
 const K_MSGS  = "covoit_messages";
 
-// Connexion Supabase (Remplace avec tes vrais identifiants)
+// Initialisation Supabase (Vérifie tes clés dans ton dashboard Supabase)
 const supabase = window.supabase?.createClient('TON_URL_SUPABASE', 'TA_CLE_ANON');
 
-// ── MOTEUR DE STOCKAGE ──────────────────────────────────────────────────────
+// ── FONCTIONS DE STOCKAGE ───────────────────────────────────────────────────
 async function sGet(key) {
   if (supabase) {
     const { data } = await supabase.from(key).select('*');
@@ -32,24 +32,7 @@ async function sSet(key, val) {
   }
 }
 
-// ── STYLES & UI COMPONENTS ──────────────────────────────────────────────────
-const S = {
-  card: { background:"#fff", border:"1px solid #eee", borderRadius:12, padding:"1rem", marginBottom:12, boxShadow:"0 2px 4px rgba(0,0,0,0.05)" },
-  inp:  { width:"100%", padding:"10px", borderRadius:8, border:"1px solid #ddd", marginBottom:10, fontSize:14 },
-  lbl:  { fontSize:12, color:"#666", marginBottom:4, display:"block" }
-};
-
-const btn = (v) => ({
-  padding:"8px 16px", borderRadius:8, cursor:"pointer", border:"none",
-  background: v==="p" ? "#4F46E5" : "#eee", color: v==="p" ? "#fff" : "#333", fontWeight:500
-});
-
-function Av({ name, sz=36 }) {
-  const ini = name?.split(" ").map(w=>w[0]).join("").toUpperCase() || "?";
-  return <div style={{ width:sz, height:sz, borderRadius:"50%", background:"#eef2ff", color:"#4F46E5", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:600, fontSize:sz*0.4 }}>{ini}</div>;
-}
-
-// ── MODULE CARTE (LEAFLET) ──────────────────────────────────────────────────
+// ── COMPOSANT CARTE (LEAFLET) ───────────────────────────────────────────────
 function InteractiveMap({ users, me }) {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
@@ -60,28 +43,24 @@ function InteractiveMap({ users, me }) {
       mapInstance.current = L.map(mapRef.current).setView([50.6703, 3.2283], 11);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance.current);
     }
-
-    // Clear markers
+    // Nettoyage markers
     mapInstance.current.eachLayer(l => { if(l instanceof L.Marker) mapInstance.current.removeLayer(l); });
-
-    // Travail
+    // Point Travail
     L.marker([50.6703, 3.2283]).addTo(mapInstance.current).bindPopup("🏢 Bureau");
-
-    // Users
+    // Points Users
     users.forEach(u => {
       if (u.cD) {
-        const isMe = u.id === me?.id;
-        const color = isMe ? '#10b981' : (u.role === 'conducteur' ? '#4f46e5' : '#f59e0b');
-        const icon = L.divIcon({ html: `<div style="background:${color}; width:12px; height:12px; border-radius:50%; border:2px solid white;"></div>`, iconSize:[12,12] });
-        L.marker([u.cD.lat, u.cD.lon], { icon }).addTo(mapInstance.current).bindPopup(`<b>${u.prenom}</b> (${u.role})`);
+        const col = u.role === 'conducteur' ? '#4f46e5' : '#f59e0b';
+        L.circleMarker([u.cD.lat, u.cD.lon], { color: col, radius: 8 }).addTo(mapInstance.current)
+          .bindPopup(`<b>${u.prenom}</b> (${u.role})`);
       }
     });
-  }, [users, me]);
+  }, [users]);
 
-  return <div ref={mapRef} style={{ height: "300px", borderRadius: 12, marginBottom: 20, zIndex: 1 }} />;
+  return <div ref={mapRef} style={{ height: "300px", borderRadius: 12, marginBottom: 20, zIndex: 1, border: "1px solid #ddd" }} />;
 }
 
-// ── MODULE TCHAT ────────────────────────────────────────────────────────────
+// ── COMPOSANT TCHAT ─────────────────────────────────────────────────────────
 function ChatBox({ me, partner, messages, onSend }) {
   const [txt, setTxt] = useState("");
   const key = [me.id, partner.id].sort().join("_");
@@ -91,24 +70,24 @@ function ChatBox({ me, partner, messages, onSend }) {
   useEffect(() => { if(scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [chatMsgs]);
 
   return (
-    <div style={S.card}>
-      <div style={{ fontWeight: 600, marginBottom: 10 }}>💬 Chat avec {partner.prenom}</div>
-      <div ref={scrollRef} style={{ height: 200, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, padding: 5 }}>
+    <div style={{ background: "#fff", border: "1px solid #eee", borderRadius: 12, padding: 10, marginTop: 10 }}>
+      <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 10 }}>💬 Discussion avec {partner.prenom}</div>
+      <div ref={scrollRef} style={{ height: 150, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 5 }}>
         {chatMsgs.map(m => (
-          <div key={m.id} style={{ alignSelf: m.senderId === me.id ? 'flex-end' : 'flex-start', background: m.senderId === me.id ? '#4F46E5' : '#F3F4F6', color: m.senderId === me.id ? '#fff' : '#000', padding: '6px 12px', borderRadius: 12, fontSize: 13 }}>
+          <div key={m.id} style={{ alignSelf: m.senderId === me.id ? 'flex-end' : 'flex-start', background: m.senderId === me.id ? '#4F46E5' : '#F3F4F6', color: m.senderId === me.id ? '#fff' : '#000', padding: '6px 10px', borderRadius: 10, fontSize: 12 }}>
             {m.text}
           </div>
         ))}
       </div>
       <div style={{ display: 'flex', gap: 5, marginTop: 10 }}>
-        <input style={S.inp} value={txt} onChange={e=>setTxt(e.target.value)} placeholder="Message..." onKeyPress={e=>e.key==='Enter' && (onSend(key, txt), setTxt(""))} />
-        <button style={btn("p")} onClick={() => { onSend(key, txt); setTxt(""); }}>OK</button>
+        <input style={{ flex: 1, padding: 8, borderRadius: 8, border: "1px solid #ddd" }} value={txt} onChange={e=>setTxt(e.target.value)} placeholder="Message..." />
+        <button style={{ padding: "8px 15px", background: "#4F46E5", color: "#fff", border: "none", borderRadius: 8 }} onClick={() => { onSend(key, txt); setTxt(""); }}>OK</button>
       </div>
     </div>
   );
 }
 
-// ── APPLICATION PRINCIPALE ──────────────────────────────────────────────────
+// ── APP PRINCIPALE ──────────────────────────────────────────────────────────
 export default function App() {
   const [unlocked, setUnlocked] = useState(false);
   const [me, setMe] = useState(null);
@@ -116,13 +95,12 @@ export default function App() {
   const [messages, setMessages] = useState([]);
   const [tab, setTab] = useState("Accueil");
 
-  // Chargement initial
   useEffect(() => {
     async function load() {
       const u = await sGet(K_USERS);
       const m = await sGet(K_MSGS);
-      setUsers(u);
-      setMessages(m);
+      setUsers(u || []);
+      setMessages(m || []);
     }
     if (unlocked) load();
   }, [unlocked]);
@@ -136,54 +114,47 @@ export default function App() {
   };
 
   if (!unlocked) return (
-    <div style={{ maxWidth: 400, margin: "100px auto", textAlign: "center", fontFamily: "sans-serif" }}>
+    <div style={{ maxWidth: 350, margin: "100px auto", textAlign: "center" }}>
       <h2>Covoit'Collab 2026</h2>
-      <input type="password" style={S.inp} placeholder="Code d'accès" onChange={(e) => e.target.value === ACCESS_CODE && setUnlocked(true)} />
+      <input type="password" placeholder="Code d'accès" style={{ width: '100%', padding: 10, marginBottom: 10 }} onChange={(e) => e.target.value === ACCESS_CODE && setUnlocked(true)} />
     </div>
   );
 
   if (!me) return (
-    <div style={{ maxWidth: 400, margin: "50px auto", padding: 20 }}>
-      <h3>Choisissez votre profil pour tester :</h3>
-      {users.length === 0 ? <p>Aucun utilisateur. Créez-en un dans la base !</p> : 
-        users.map(u => <button key={u.id} style={{...btn(), width:'100%', marginBottom:10}} onClick={() => setMe(u)}>{u.prenom} {u.nom}</button>)
-      }
-      <button style={btn("p")} onClick={() => setMe({id: "admin", prenom: "Thomas", role: "conducteur"})}>Mode Admin (Thomas)</button>
+    <div style={{ maxWidth: 500, margin: "50px auto", padding: 20 }}>
+      <h3>Qui êtes-vous ?</h3>
+      <button style={{ width: '100%', padding: 15, background: "#4F46E5", color: "#fff", border: "none", borderRadius: 8 }} onClick={() => setMe({ id: "thomas_1", prenom: "Thomas", role: "conducteur", cD: {lat: 50.63, lon: 3.06} })}>Connexion (Thomas)</button>
     </div>
   );
 
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", padding: 20, fontFamily: "sans-serif" }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2>Covoit'Collab</h2>
-        <button style={btn()} onClick={() => setMe(null)}>Déconnexion</button>
-      </div>
+      <header style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
+        <b>🚗 Covoit'Collab</b>
+        <button onClick={() => setMe(null)}>Déconnexion</button>
+      </header>
 
       <nav style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
-        {["Accueil", "Matching", "Profil"].map(t => (
-          <button key={t} onClick={() => setTab(t)} style={btn(tab === t ? "p" : "d")}>{t}</button>
+        {["Accueil", "Matching"].map(t => (
+          <button key={t} onClick={() => setTab(t)} style={{ padding: 10, background: tab === t ? "#4F46E5" : "#eee", color: tab === t ? "#fff" : "#000", border: "none", borderRadius: 8 }}>{t}</button>
         ))}
       </nav>
 
       {tab === "Accueil" && (
         <>
           <InteractiveMap users={users} me={me} />
-          <div style={S.card}>
-            <h3>Bienvenue, {me.prenom} !</h3>
-            <p style={{ color: '#666' }}>Utilisateurs actifs : {users.length}</p>
+          <div style={{ background: "#f9f9f9", padding: 15, borderRadius: 12 }}>
+            <h3>Salut {me.prenom} !</h3>
+            <p>Il y a {users.length} collègues inscrits aujourd'hui.</p>
           </div>
         </>
       )}
 
       {tab === "Matching" && (
         <div>
-          <h3>Matchings disponibles</h3>
           {users.filter(u => u.id !== me.id).map(u => (
-            <div key={u.id}>
-              <div style={S.card}>
-                <Av name={u.prenom} />
-                <b>{u.prenom}</b> ({u.role}) habitant à {u.ville}
-              </div>
+            <div key={u.id} style={{ borderBottom: "1px solid #eee", padding: "15px 0" }}>
+              <b>{u.prenom}</b> ({u.role}) à {u.ville}
               <ChatBox me={me} partner={u} messages={messages} onSend={handleSend} />
             </div>
           ))}
