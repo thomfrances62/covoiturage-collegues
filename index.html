@@ -4,22 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Covoit'Collab 2026</title>
-    <!-- On charge Leaflet pour la carte interactive -->
+    <!-- LEAFLET CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- SCRIPTS CORE -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- On charge React, Tailwind et Babel -->
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        :root { --font-sans: 'Inter', sans-serif; --color-background-primary: #ffffff; --color-background-secondary: #f9fafb; --color-border-tertiary: #e5e7eb; --color-text-primary: #111827; --color-text-secondary: #6b7280; }
-        body { background: #f3f4f6; }
-    </style>
+    <!-- SUPABASE CLIENT -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
-<body>
+<body class="bg-gray-100">
     <div id="root"></div>
-    <!-- C'est ici qu'on charge ton code -->
     <script type="text/babel" src="App.js"></script>
 </body>
 </html>
